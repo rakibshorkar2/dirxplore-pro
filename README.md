@@ -1,4 +1,4 @@
-# 🚀 DirXplore `v1.0.9`
+# 🚀 DirXplore `v1.3.0`
 
 **DirXplore** is a high-performance, premium Flutter application designed for power users who need to browse, crawl, and download from open directories (Apache/Nginx) with surgical precision.
 
