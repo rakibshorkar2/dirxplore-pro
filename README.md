@@ -16,6 +16,15 @@
 * **Pause & Resume**: Full support for `Range` headers and `206 Partial Content`, meaning you never lose progress.
 * **Liquid Glass UI**: Stunning progress bars with real-time speed tracking and ETA calculation.
 
+### 🌪️ Advanced Torrenting & Streaming (New)
+* **Redesigned Torrent Hub**: Ultra-clean UI focused on search and active sessions.
+* **Smart Sorting**: Instantly sort results by **Seeders**, **File Size**, or **Alphabetical Name**.
+* **External Integration**:
+    * **1DM Support**: One-tap handoff to external downloaders like 1DM.
+    * **VLC/External Player**: Stream torrents directly to VLC or other players without downloading.
+* **Internal Streaming Engine**: Built-in high-performance streaming server for immediate playback within the app.
+* **Sequential Download Toggle**: Optimized for buffer-free streaming.
+
 ### � Premium Security & Privacy
 * **Biometric Unlock**: Secure the app using your device's fingerprint or face unlock. Optimized for in-display sensors with a glitch-free "Premium Fix" for Android.
 * **Inactivity Auto-Lock**: Automatically locks the app after 30s, 1m, or 2m of inactivity to keep your data safe.
