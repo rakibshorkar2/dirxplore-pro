@@ -1,6 +1,4 @@
-import 'dart:convert';
 import 'dart:math';
-import 'package:dio/dio.dart';
 import '../services/dio_client.dart';
 
 class TorrentSearchResult {
@@ -24,7 +22,8 @@ class TorrentSearchResult {
 }
 
 class TorrentService {
-  static Future<List<TorrentSearchResult>> searchAll(String query, {bool useProxy = false}) async {
+  static Future<List<TorrentSearchResult>> searchAll(String query,
+      {bool useProxy = false}) async {
     if (query.isEmpty) return [];
 
     final results = await Future.wait([
@@ -44,9 +43,10 @@ class TorrentService {
     return allResults;
   }
 
-  static Future<List<TorrentSearchResult>> searchYTS(String query, {bool useProxy = false}) async {
+  static Future<List<TorrentSearchResult>> searchYTS(String query,
+      {bool useProxy = false}) async {
     if (query.isEmpty) return [];
-    
+
     try {
       final dio = useProxy ? DioClient().dio : DioClient().cleanDio;
       final response = await dio.get(
@@ -54,18 +54,20 @@ class TorrentService {
         queryParameters: {'query_term': query, 'limit': 15},
       );
 
-      if (response.data['status'] == 'ok' && response.data['data']['movies'] != null) {
+      if (response.data['status'] == 'ok' &&
+          response.data['data']['movies'] != null) {
         final List movies = response.data['data']['movies'];
         final List<TorrentSearchResult> results = [];
 
         for (var movie in movies) {
           final title = movie['title_long'] ?? movie['title'];
           final torrents = movie['torrents'] as List?;
-          
+
           if (torrents != null) {
             for (var t in torrents) {
               final hash = t['hash'];
-              final magnet = 'magnet:?xt=urn:btih:$hash&dn=${Uri.encodeComponent(title)}';
+              final magnet =
+                  'magnet:?xt=urn:btih:$hash&dn=${Uri.encodeComponent(title)}';
 
               results.add(TorrentSearchResult(
                 title: '$title (${t['quality']} ${t['type']})',
@@ -85,7 +87,8 @@ class TorrentService {
     return [];
   }
 
-  static Future<List<TorrentSearchResult>> searchSolidTorrents(String query, {bool useProxy = false}) async {
+  static Future<List<TorrentSearchResult>> searchSolidTorrents(String query,
+      {bool useProxy = false}) async {
     try {
       final dio = useProxy ? DioClient().dio : DioClient().cleanDio;
       final response = await dio.get(
@@ -99,7 +102,7 @@ class TorrentService {
           return TorrentSearchResult(
             title: item['title'],
             magnet: item['magnet'],
-            size: _formatBytes(item['size']),
+            size: formatBytes(item['size']),
             seeds: item['swarm']['seeders'].toString(),
             peers: item['swarm']['leechers'].toString(),
             hash: item['infoHash'],
@@ -111,7 +114,8 @@ class TorrentService {
     return [];
   }
 
-  static Future<List<TorrentSearchResult>> searchPirateBay(String query, {bool useProxy = false}) async {
+  static Future<List<TorrentSearchResult>> searchPirateBay(String query,
+      {bool useProxy = false}) async {
     try {
       final dio = useProxy ? DioClient().dio : DioClient().cleanDio;
       final response = await dio.get(
@@ -125,11 +129,12 @@ class TorrentService {
         return items.where((i) => i['id'] != '0').map((item) {
           final hash = item['info_hash'];
           final title = item['name'];
-          final magnet = 'magnet:?xt=urn:btih:$hash&dn=${Uri.encodeComponent(title)}';
+          final magnet =
+              'magnet:?xt=urn:btih:$hash&dn=${Uri.encodeComponent(title)}';
           return TorrentSearchResult(
             title: title,
             magnet: magnet,
-            size: _formatBytes(int.tryParse(item['size'].toString()) ?? 0),
+            size: formatBytes(int.tryParse(item['size'].toString()) ?? 0),
             seeds: item['seeders'].toString(),
             peers: item['leechers'].toString(),
             hash: hash,
@@ -141,7 +146,7 @@ class TorrentService {
     return [];
   }
 
-  static String _formatBytes(int bytes) {
+  static String formatBytes(int bytes) {
     if (bytes <= 0) return "0 B";
     const suffixes = ["B", "KB", "MB", "GB", "TB"];
     var i = (log(bytes) / log(1024)).floor();

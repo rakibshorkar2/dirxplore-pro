@@ -261,17 +261,30 @@ class SettingsTab extends StatelessWidget {
                     title: 'Pause on Low Battery',
                     subtitle: 'Protect battery life during downloads',
                     value: appState.torrentPauseOnLowBattery,
-                    onChanged: (val) => appState.setTorrentPauseOnLowBattery(val),
+                    onChanged: (val) =>
+                        appState.setTorrentPauseOnLowBattery(val),
                   ),
                   _buildGlassTile(
-                    title: 'Global Download Limit',
-                    subtitle: appState.torrentDownloadLimit == 0 ? 'Unlimited' : '${appState.torrentDownloadLimit} MB/s',
-                    onTap: () => _showLimitDialog(context, 'Download Limit', appState.torrentDownloadLimit, (val) => appState.setTorrentDownloadLimit(val)),
+                    title: const Text('Global Download Limit'),
+                    subtitle: Text(appState.torrentDownloadLimit == 0
+                        ? 'Unlimited'
+                        : '${appState.torrentDownloadLimit} MB/s'),
+                    onTap: () => _showLimitDialog(
+                        context,
+                        'Download Limit',
+                        appState.torrentDownloadLimit,
+                        (val) => appState.setTorrentDownloadLimit(val)),
                   ),
                   _buildGlassTile(
-                    title: 'Global Upload Limit',
-                    subtitle: appState.torrentUploadLimit == 0 ? 'Unlimited' : '${appState.torrentUploadLimit} MB/s',
-                    onTap: () => _showLimitDialog(context, 'Upload Limit', appState.torrentUploadLimit, (val) => appState.setTorrentUploadLimit(val)),
+                    title: const Text('Global Upload Limit'),
+                    subtitle: Text(appState.torrentUploadLimit == 0
+                        ? 'Unlimited'
+                        : '${appState.torrentUploadLimit} MB/s'),
+                    onTap: () => _showLimitDialog(
+                        context,
+                        'Upload Limit',
+                        appState.torrentUploadLimit,
+                        (val) => appState.setTorrentUploadLimit(val)),
                   ),
                   _buildGlassSwitchTile(
                     title: 'Monitor Clipboard for Magnets',
@@ -475,8 +488,12 @@ class SettingsTab extends StatelessWidget {
       context,
       MaterialPageRoute(builder: (context) => const SecuritySetupScreen()),
     );
-  void _showLimitDialog(BuildContext context, String title, double currentVal, Function(double) onSaved) {
-    final controller = TextEditingController(text: currentVal == 0 ? '' : currentVal.toString());
+  }
+
+  void _showLimitDialog(BuildContext context, String title, double currentVal,
+      Function(double) onSaved) {
+    final controller = TextEditingController(
+        text: currentVal == 0 ? '' : currentVal.toString());
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -490,7 +507,8 @@ class SettingsTab extends StatelessWidget {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () {
               final val = double.tryParse(controller.text) ?? 0;

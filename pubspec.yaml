@@ -75,6 +75,11 @@ dependencies:
   workmanager: ^0.9.0+3
   android_intent_plus: ^5.0.2
 
+  dtorrent_task_v2: any
+  dtorrent_tracker: any
+  dtorrent_common: any
+  dtorrent_parser: any
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
