@@ -332,15 +332,19 @@ class _BrowserTabState extends State<BrowserTab> {
                                                 children: [
                                                   InkWell(
                                                     onTap: () {
+                                                      final videoFiles = browserState.items.where((i) => !i.isDirectory && _isPlayableMedia(i.name)).toList();
+                                                      final playlist = videoFiles.map((i) => { 'url': ProxyTunnel().getTunnelUrl(i.url), 'title': i.name }).toList();
+                                                      final initialIndex = videoFiles.indexWhere((i) => i.url == item.url);
+                                                      
                                                       Navigator.push(
                                                           context,
                                                           MaterialPageRoute(
                                                             builder: (_) =>
                                                                 MediaPlayerScreen(
-                                                                    url: item
-                                                                        .url,
-                                                                    title: item
-                                                                        .name),
+                                                                    url: playlist[initialIndex]['url']!,
+                                                                    title: playlist[initialIndex]['title']!,
+                                                                    playlist: playlist,
+                                                                    initialIndex: initialIndex),
                                                           ));
                                                     },
                                                     child: Container(
@@ -725,12 +729,20 @@ class _BrowserTabState extends State<BrowserTab> {
                   title: const Text('Play in App'),
                   onTap: () {
                     Navigator.pop(ctx);
-                    final tunnelUrl = ProxyTunnel().getTunnelUrl(item.url);
+                    final browserState = context.read<BrowserProvider>();
+                    final videoFiles = browserState.items.where((i) => !i.isDirectory && _isPlayableMedia(i.name)).toList();
+                    final playlist = videoFiles.map((i) => { 'url': ProxyTunnel().getTunnelUrl(i.url), 'title': i.name }).toList();
+                    final initialIndex = videoFiles.indexWhere((i) => i.url == item.url);
+                    
                     Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (_) => MediaPlayerScreen(
-                              url: tunnelUrl, title: item.name),
+                              url: playlist[initialIndex >= 0 ? initialIndex : 0]['url']!, 
+                              title: item.name,
+                              playlist: playlist.isNotEmpty ? playlist : null,
+                              initialIndex: initialIndex >= 0 ? initialIndex : 0,
+                          ),
                         ));
                   },
                 ),

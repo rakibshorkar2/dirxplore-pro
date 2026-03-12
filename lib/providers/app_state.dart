@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import '../services/torrent_service.dart';
 
 class AppState with ChangeNotifier {
   ThemeMode _themeMode = ThemeMode.system;
@@ -29,6 +30,7 @@ class AppState with ChangeNotifier {
   double _torrentDownloadLimit = 0; // MB/s
   double _torrentUploadLimit = 0;
   bool _monitorClipboardMagnet = false;
+  List<TorrentSearchProvider> _selectedTorrentProviders = TorrentSearchProvider.values;
 
   ThemeMode get themeMode => _themeMode;
   String get defaultSavePath => _defaultSavePath;
@@ -56,6 +58,8 @@ class AppState with ChangeNotifier {
   double get torrentDownloadLimit => _torrentDownloadLimit;
   double get torrentUploadLimit => _torrentUploadLimit;
   bool get monitorClipboardMagnet => _monitorClipboardMagnet;
+  List<TorrentSearchProvider> get selectedTorrentProviders =>
+      _selectedTorrentProviders;
 
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
@@ -90,6 +94,13 @@ class AppState with ChangeNotifier {
     _torrentDownloadLimit = prefs.getDouble('torrentDownloadLimit') ?? 0;
     _torrentUploadLimit = prefs.getDouble('torrentUploadLimit') ?? 0;
     _monitorClipboardMagnet = prefs.getBool('monitorClipboardMagnet') ?? false;
+    final pList = prefs.getStringList('selectedTorrentProviders');
+    if (pList != null) {
+      _selectedTorrentProviders = pList
+          .map((e) => TorrentSearchProvider.values
+              .firstWhere((v) => v.name == e, orElse: () => TorrentSearchProvider.yts))
+          .toList();
+    }
 
     // Load App Version
     final info = await PackageInfo.fromPlatform();
@@ -260,5 +271,28 @@ class AppState with ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('monitorClipboardMagnet', val);
+  }
+
+  Future<void> setSelectedTorrentProviders(
+      List<TorrentSearchProvider> providers) async {
+    _selectedTorrentProviders = providers;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(
+        'selectedTorrentProviders', providers.map((e) => e.name).toList());
+  }
+
+  Future<void> toggleTorrentProvider(TorrentSearchProvider provider) async {
+    if (_selectedTorrentProviders.contains(provider)) {
+      if (_selectedTorrentProviders.length > 1) {
+        _selectedTorrentProviders.remove(provider);
+      }
+    } else {
+      _selectedTorrentProviders.add(provider);
+    }
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('selectedTorrentProviders',
+        _selectedTorrentProviders.map((e) => e.name).toList());
   }
 }

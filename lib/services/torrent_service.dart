@@ -1,6 +1,58 @@
 import 'dart:math';
 import '../services/dio_client.dart';
 
+enum TorrentSearchProvider {
+  yts,
+  solid,
+  pb,
+  x1337,
+  tGalaxy,
+  nyaa,
+  lime,
+  kickass,
+  eztv,
+  rarbg,
+  rutor,
+  idope,
+  isohunt,
+  soft,
+  zooqle,
+  animeTime,
+  animeTosho,
+  anirena,
+  anisource,
+  arabTorrents,
+  bitsearch,
+  blueRoms,
+  btEtree,
+  btDirectory,
+  cloudTorrents,
+  corsaroNero,
+  cpasbien,
+  extratorrent,
+  fitgirl,
+  gamesTorrents,
+  linuxTracker,
+  megaPeer,
+  nonameClub,
+  redeTorrent,
+  torrentCSV,
+  torrentCore,
+  torrentFunk,
+  torrentoyunindir,
+  yourBitTorrent,
+}
+
+enum TorrentCategory {
+  all,
+  movies,
+  series,
+  games,
+  music,
+  books,
+  apps,
+}
+
 class TorrentSearchResult {
   final String title;
   final String magnet;
@@ -23,16 +75,61 @@ class TorrentSearchResult {
 
 class TorrentService {
   static Future<List<TorrentSearchResult>> searchAll(String query,
-      {bool useProxy = false}) async {
+      {bool useProxy = false,
+      List<TorrentSearchProvider>? providers,
+      TorrentCategory category = TorrentCategory.all}) async {
     if (query.isEmpty) return [];
 
-    final results = await Future.wait([
-      searchYTS(query, useProxy: useProxy),
-      searchSolidTorrents(query, useProxy: useProxy),
-      searchPirateBay(query, useProxy: useProxy),
-    ]);
+    final selectedProviders = providers ?? [
+      TorrentSearchProvider.yts,
+      TorrentSearchProvider.solid,
+      TorrentSearchProvider.pb,
+      TorrentSearchProvider.x1337,
+      TorrentSearchProvider.tGalaxy,
+    ];
 
-    // Flatten and sort by seeds (optional)
+    final List<Future<List<TorrentSearchResult>>> searchTasks = [];
+    
+    for (var p in selectedProviders) {
+      switch (p) {
+        case TorrentSearchProvider.yts:
+          searchTasks.add(searchYTS(query, useProxy: useProxy));
+          break;
+        case TorrentSearchProvider.solid:
+          searchTasks.add(searchSolidTorrents(query, useProxy: useProxy));
+          break;
+        case TorrentSearchProvider.pb:
+          searchTasks.add(searchPirateBay(query, useProxy: useProxy));
+          break;
+        case TorrentSearchProvider.x1337:
+          searchTasks.add(search1337x(query, useProxy: useProxy));
+          break;
+        case TorrentSearchProvider.tGalaxy:
+          searchTasks.add(searchTorrentGalaxy(query, useProxy: useProxy, category: category));
+          break;
+        case TorrentSearchProvider.nyaa:
+          searchTasks.add(searchNyaa(query, useProxy: useProxy));
+          break;
+        case TorrentSearchProvider.kickass:
+          searchTasks.add(searchKickass(query, useProxy: useProxy, category: category));
+          break;
+        case TorrentSearchProvider.lime:
+          searchTasks.add(searchLimeTorrents(query, useProxy: useProxy, category: category));
+          break;
+        case TorrentSearchProvider.eztv:
+          searchTasks.add(searchEzTV(query, useProxy: useProxy));
+          break;
+        case TorrentSearchProvider.idope:
+          searchTasks.add(searchIDope(query, useProxy: useProxy));
+          break;
+        default:
+          break;
+      }
+    }
+
+    final List<List<TorrentSearchResult>> results = await Future.wait(searchTasks);
+
+    // Flatten and sort by seeds
     final allResults = results.expand((x) => x).toList();
     allResults.sort((a, b) {
       final sA = int.tryParse(a.seeds) ?? 0;
@@ -88,12 +185,20 @@ class TorrentService {
   }
 
   static Future<List<TorrentSearchResult>> searchSolidTorrents(String query,
-      {bool useProxy = false}) async {
+      {bool useProxy = false, TorrentCategory category = TorrentCategory.all}) async {
     try {
+      String cat = 'all';
+      if (category == TorrentCategory.movies) cat = 'movies';
+      if (category == TorrentCategory.series) cat = 'series';
+      if (category == TorrentCategory.music) cat = 'music';
+      if (category == TorrentCategory.games) cat = 'games';
+      if (category == TorrentCategory.apps) cat = 'apps';
+      if (category == TorrentCategory.books) cat = 'books';
+
       final dio = useProxy ? DioClient().dio : DioClient().cleanDio;
       final response = await dio.get(
         'https://solidtorrents.to/api/v1/search',
-        queryParameters: {'q': query, 'category': 'all', 'sort': 'seeders'},
+        queryParameters: {'q': query, 'category': cat, 'sort': 'seeders'},
       );
 
       if (response.data['results'] != null) {
@@ -115,17 +220,22 @@ class TorrentService {
   }
 
   static Future<List<TorrentSearchResult>> searchPirateBay(String query,
-      {bool useProxy = false}) async {
+      {bool useProxy = false, TorrentCategory category = TorrentCategory.all}) async {
     try {
+      String cat = '0'; // All
+      if (category == TorrentCategory.music) cat = '100';
+      if (category == TorrentCategory.movies || category == TorrentCategory.series) cat = '200';
+      if (category == TorrentCategory.apps) cat = '300';
+      if (category == TorrentCategory.games) cat = '400';
+
       final dio = useProxy ? DioClient().dio : DioClient().cleanDio;
       final response = await dio.get(
         'https://apibay.org/q.php',
-        queryParameters: {'q': query},
+        queryParameters: {'q': query, 'cat': cat},
       );
 
       if (response.data is List) {
         final List items = response.data;
-        // Filter out "No results" dummy item (id=0)
         return items.where((i) => i['id'] != '0').map((item) {
           final hash = item['info_hash'];
           final title = item['name'];
@@ -144,6 +254,205 @@ class TorrentService {
       }
     } catch (_) {}
     return [];
+  }
+
+  static Future<List<TorrentSearchResult>> search1337x(String query,
+      {bool useProxy = false}) async {
+    // Unofficial API or Scraping. Using apilist.one or similar proxy for stability
+    try {
+      final dio = useProxy ? DioClient().dio : DioClient().cleanDio;
+      final response = await dio.get(
+        'https://api.apilist.one/1337x',
+        queryParameters: {'q': query},
+      );
+      
+      if (response.data != null && response.data is List) {
+        final List items = response.data;
+        return items.map((item) {
+           return TorrentSearchResult(
+            title: item['name'],
+            magnet: item['magnet'],
+            size: item['size'] ?? 'Unknown',
+            seeds: item['seeders'].toString(),
+            peers: item['leechers'].toString(),
+            hash: _extHash(item['magnet']),
+            provider: '1337x',
+          );
+        }).toList();
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  static Future<List<TorrentSearchResult>> searchTorrentGalaxy(String query,
+      {bool useProxy = false, TorrentCategory category = TorrentCategory.all}) async {
+    try {
+      // TGx API uses specific category IDs, simplified here
+      final dio = useProxy ? DioClient().dio : DioClient().cleanDio;
+      final response = await dio.get(
+        'https://api.apilist.one/tgx',
+        queryParameters: {'q': query},
+      );
+      
+      if (response.data != null && response.data is List) {
+        final List items = response.data;
+        return items.map((item) {
+           return TorrentSearchResult(
+            title: item['name'],
+            magnet: item['magnet'],
+            size: item['size'] ?? 'Unknown',
+            seeds: item['seeders'].toString(),
+            peers: item['leechers'].toString(),
+            hash: _extHash(item['magnet']),
+            provider: 'TGx',
+          );
+        }).toList();
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  static Future<List<TorrentSearchResult>> searchNyaa(String query,
+      {bool useProxy = false}) async {
+    try {
+      final dio = useProxy ? DioClient().dio : DioClient().cleanDio;
+      final response = await dio.get(
+        'https://api.apilist.one/nyaa',
+        queryParameters: {'q': query},
+      );
+      
+      if (response.data != null && response.data is List) {
+        final List items = response.data;
+        return items.map((item) {
+           return TorrentSearchResult(
+            title: item['name'],
+            magnet: item['magnet'],
+            size: item['size'] ?? 'Unknown',
+            seeds: item['seeders'].toString(),
+            peers: item['leechers'].toString(),
+            hash: _extHash(item['magnet']),
+            provider: 'Nyaa',
+          );
+        }).toList();
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  static Future<List<TorrentSearchResult>> searchKickass(String query,
+      {bool useProxy = false, TorrentCategory category = TorrentCategory.all}) async {
+    try {
+      final dio = useProxy ? DioClient().dio : DioClient().cleanDio;
+      final response = await dio.get(
+        'https://api.apilist.one/kickass',
+        queryParameters: {'q': query},
+      );
+      
+      if (response.data != null && response.data is List) {
+        final List items = response.data;
+        return items.map((item) {
+           return TorrentSearchResult(
+            title: item['name'],
+            magnet: item['magnet'],
+            size: item['size'] ?? 'Unknown',
+            seeds: item['seeders'].toString(),
+            peers: item['leechers'].toString(),
+            hash: _extHash(item['magnet']),
+            provider: 'Kickass',
+          );
+        }).toList();
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  static Future<List<TorrentSearchResult>> searchLimeTorrents(String query,
+      {bool useProxy = false, TorrentCategory category = TorrentCategory.all}) async {
+    try {
+      final dio = useProxy ? DioClient().dio : DioClient().cleanDio;
+      final response = await dio.get(
+        'https://api.apilist.one/limetorrent',
+        queryParameters: {'q': query},
+      );
+      
+      if (response.data != null && response.data is List) {
+        final List items = response.data;
+        return items.map((item) {
+           return TorrentSearchResult(
+            title: item['name'],
+            magnet: item['magnet'],
+            size: item['size'] ?? 'Unknown',
+            seeds: item['seeders'].toString(),
+            peers: item['leechers'].toString(),
+            hash: _extHash(item['magnet']),
+            provider: 'Lime',
+          );
+        }).toList();
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  static Future<List<TorrentSearchResult>> searchEzTV(String query,
+      {bool useProxy = false}) async {
+    try {
+      final dio = useProxy ? DioClient().dio : DioClient().cleanDio;
+      final response = await dio.get(
+        'https://api.apilist.one/eztv',
+        queryParameters: {'q': query},
+      );
+      
+      if (response.data != null && response.data is List) {
+        final List items = response.data;
+        return items.map((item) {
+           return TorrentSearchResult(
+            title: item['name'],
+            magnet: item['magnet'],
+            size: item['size'] ?? 'Unknown',
+            seeds: item['seeders'].toString(),
+            peers: item['leechers'].toString(),
+            hash: _extHash(item['magnet']),
+            provider: 'EzTV',
+          );
+        }).toList();
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  static Future<List<TorrentSearchResult>> searchIDope(String query,
+      {bool useProxy = false}) async {
+    try {
+      final dio = useProxy ? DioClient().dio : DioClient().cleanDio;
+      final response = await dio.get(
+        'https://api.apilist.one/idope',
+        queryParameters: {'q': query},
+      );
+      
+      if (response.data != null && response.data is List) {
+        final List items = response.data;
+        return items.map((item) {
+           return TorrentSearchResult(
+            title: item['name'],
+            magnet: item['magnet'],
+            size: item['size'] ?? 'Unknown',
+            seeds: item['seeders'].toString(),
+            peers: item['leechers'].toString(),
+            hash: _extHash(item['magnet']),
+            provider: 'iDope',
+          );
+        }).toList();
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  static String _extHash(String magnet) {
+    if (magnet.startsWith('magnet:?xt=urn:btih:')) {
+      final xtMatch = RegExp(r'xt=urn:btih:([^&]+)').firstMatch(magnet);
+      return xtMatch?.group(1) ?? '';
+    }
+    return '';
   }
 
   static String formatBytes(int bytes) {
